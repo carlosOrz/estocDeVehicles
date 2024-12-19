@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <title>Vehicles Catalunya</title>
+    <script>
+var xhttp_C = new XMLHttpRequest();
+var xhttp_E = new XMLHttpRequest();
+var urlC = 'http://localhost:8080/vehiclescatalunya/origen/Catalunya';
+var urlE = 'http://localhost:8080/vehiclescatalunya/origen/Espanya';
+
+var year_list_C = [];
+var total_list_C = [];
+var turismes_list_C = [];
+
+
+var year_list_E = [];
+var total_list_E = [];
+var turismes_list_E = [];
+
+var invocationHistoryText;
+
+function callOtherDomain_C(){
+  if(xhttp_C) {    
+    xhttp_C.open('GET', urlC, true);
+    xhttp_C.onreadystatechange = handlerCatalunya;
+    xhttp_C.send(); 
+  } else {
+    var textNode = document.createTextNode("No s'ha enviat la petició");
+    var textDiv = document.getElementById("textDiv");
+    textDiv.appendChild(textNode);
+  }
+}
+
+function callOtherDomain_E(){
+  if(xhttp_E) {    
+	xhttp_E.open('GET', urlE, true);
+    xhttp_E.onreadystatechange = handlerEspanya;
+    xhttp_E.send();
+  } else {
+    var textNode = document.createTextNode("No s'ha enviat la petició");
+    var textDiv = document.getElementById("textDiv");
+    textDiv.appendChild(textNode);
+  }
+}
+
+function handlerCatalunya(evtXHR) {
+  if (xhttp_C.readyState == 4) {
+    if (xhttp_C.status == 200) { //OK
+      let resposta = xhttp_C.responseText;
+      //console.log(resposta);
+      //les dades:
+      let dades = JSON.parse(resposta)
+      console.log(dades[0])
+
+      for (let i=0; i<dades.length;i++) {
+          //console.log(dades[i].date);
+          //console.log(dades[i].value);
+          year_list_C.push(dades[i].data);
+          turismes_list_C.push(dades[i].turismes);
+		  total_list_C.push(dades[i].total);
+      }
+      //console.log (year_list);
+      //console.log (total_list);
+
+      var chart = new Highcharts.Chart({
+        chart: {
+          type: 'spline',
+          renderTo: 'container'
+        },
+        title: {
+          text: 'Vehicles a Catalunya'
+        },
+        tooltip: {
+          valueDecimals: 0
+        },
+        subtitle: {
+          text: 'Source: IDESCAT'
+        },
+        xAxis: {
+          categories: year_list_C
+        },
+        series: [
+          { name: "Total", data: total_list_C},
+          { name: "Turismes", data: turismes_list_C},
+        ]
+      });
+
+    } else
+      alert("Invocation Errors Occured");
+  }
+}
+
+function handlerEspanya(evtXHR) {
+  if (xhttp_E.readyState == 4) {
+    if (xhttp_E.status == 200) { //OK
+      let resposta = xhttp_E.responseText;
+      //console.log(resposta);
+      //les dades:
+      let dades = JSON.parse(resposta)
+      //console.log("patata"+dades[0])
+
+      for (let i=0; i<dades.length;i++) {
+          //console.log(dades[i].date);
+          //console.log(dades[i].value);
+          year_list_E.push(dades[i].data);
+          turismes_list_E.push(dades[i].turismes);
+		  total_list_E.push(dades[i].total);
+      }
+      //console.log (year_list);
+      //console.log (total_list);
+
+      var chart = new Highcharts.Chart({
+        chart: {
+          type: 'spline',
+          renderTo: 'container2'
+        },
+        title: {
+          text: 'Vehicles a Espanya'
+        },
+        tooltip: {
+          valueDecimals: 0
+        },
+        subtitle: {
+          text: 'Source: IDESCAT'
+        },
+        xAxis: {
+          categories: year_list_E
+        },
+        series: [
+          { name: "Total", data: total_list_E},
+          { name: "Turismes", data: turismes_list_E},
+        ]
+      });
+
+    } else
+      alert("Invocation Errors Occured");
+  }
+}
+
+
+function afegir() {
+  let fecha = document.getElementById("data").value;
+  let turismes = document.getElementById("turismes").value;
+  let total = document.getElementById("total").value;
+  let origen = document.getElementById("origen").value;
+  var url = "http://localhost:8080/vehiclescatalunya/vehicles";
+
+  var arr_data = [];
+  var data = {};
+  data.data = fecha;
+  data.turismes  = turismes;
+  data.total  = total;
+  data.origen = origen;
+  arr_data[0] = data;
+  var json = JSON.stringify(arr_data);
+  console.log(json);
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", url, true);
+  xhr.setRequestHeader('Content-type','application/json; charset=utf-8');
+  xhr.onload = function () {
+    var res = JSON.parse(xhr.responseText);
+    if (xhr.readyState == 4 && xhr.status == "201") { //CREATED
+      console.table(res);
+      //buidem els arrays:
+      year_list_C = [];
+      turismes_list_C = [];
+	  total_list_C = [];
+	  
+	  year_list_E = [];
+      turismes_list_E = [];
+	  total_list_E = [];
+
+	  callOtherDomain_C(); 
+	  callOtherDomain_E();
+    } else {
+      console.error(res);
+    }
+  }
+  xhr.send(json);
+}
+
+    </script>
+</head>
+<body onload="callOtherDomain_C(); callOtherDomain_E();">
+	<script src="https://code.highcharts.com/highcharts.js"></script>
+    <div id="container" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+	<div id="container2" style="min-width: 310px; height: 400px; margin: 0 auto"></div>
+    <form>
+      <label style="display: inline-block; width:60px;">Data:</label>
+      <select name="data" id="data">
+        <option value="oct-24">oct-24</option>
+        <option value="nov-24">nov-24</option>
+        <option value="des-24">des-24</option>
+      </select><br />
+      <label style="display: inline-block; width:60px;">Turismes:</label><input type="text" name="turismes" id="turismes" /><br />
+	  <label style="display: inline-block; width:60px;">Total:</label><input type="text" name="total" id="total" /><br />
+	  <label style="display: inline-block; width:60px;">Origen:</label>
+	  <select name="origen" id="origen">
+        <option value="Catalunya">Catalunya</option>
+        <option value="Espanya">Espanya</option>
+      </select><br />
+      <input type="button" value="Afegir" onclick="afegir()"/>
+    </form>
+</body>
+</html>
